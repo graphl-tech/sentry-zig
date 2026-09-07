@@ -1,0 +1,44 @@
+name: crash-test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+# All the platform-specific logic lives in .github/scripts/*.sh, which run
+# under `shell: bash` (Git Bash on the Windows runner).
+jobs:
+  crash-test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    # The Windows leg is expected to fail until sentry-zig wires up Windows:
+    # crashpad needs the Windows SDK, which `zig cc` does not bundle, so
+    # buildSentryNativeArtifacts refuses the target. It is in the matrix so the
+    # gap stays visible — flip `experimental` to false when support lands.
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            experimental: false
+          - os: macos-latest
+            experimental: false
+          - os: windows-latest
+            experimental: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+
+      - name: Install build deps
+        shell: bash
+        run: .github/scripts/install-build-deps.sh
+
+      - name: Build, crash, and check for a minidump
+        shell: bash
+        run: .github/scripts/crash-test.sh

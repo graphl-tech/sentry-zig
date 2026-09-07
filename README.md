@@ -84,6 +84,36 @@ not wired up yet: crashpad needs the Windows SDK, which `zig cc` does not
 bundle, so Windows targets fail early with an explanation rather than deep
 inside CMake
 
+## Turn Zig's segfault handler off
+
+Whenever runtime safety is on (Debug and ReleaseSafe), Zig installs its own
+SIGSEGV handler before `main`. Crashpad chains to it after writing the
+minidump, and it then tries to symbolize a stack trace through crashpad's own
+frames, which seems to hang.
+
+You can avoid this with the following in your root source file:
+
+```zig
+pub const std_options: std.Options = .{ .enable_segfault_handler = false };
+```
+
+This may be inconvenient when developing zig regularly, you may want to use
+a build option to only enable sentry in release builds.
+
+## Testing
+
+`test/crash` is a minimal consumer that links sentry-native, faults on purpose,
+and is checked for having produced a minidump. Run it locally with:
+
+```sh
+.github/scripts/crash-test.sh              # native
+.github/scripts/crash-test.sh <triple>     # cross-compile only, no run
+```
+
+CI runs the same script on Linux, macOS and Windows via
+`.github/workflows/crash-test.yml`. The Windows leg is expected to fail until
+Windows support lands; it is in the matrix to keep the gap visible.
+
 ## License
 
 MIT. sentry-native itself is MIT; Crashpad and mini_chromium are Apache-2.0.

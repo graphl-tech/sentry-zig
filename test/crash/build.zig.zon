@@ -1,0 +1,16 @@
+.{
+    .name = .sentry_zig_crash_test,
+    .version = "0.0.0",
+    .minimum_zig_version = "0.15.2",
+    .fingerprint = 0xc7c549145b8a1e54,
+
+    .dependencies = .{
+        .sentry_zig = .{ .path = "../.." },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "main.zig",
+    },
+}
