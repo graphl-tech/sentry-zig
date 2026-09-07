@@ -1,0 +1,38 @@
+.{
+    .name = .sentry_zig,
+
+    // Wraps the sentry-native source release published at
+    // https://github.com/getsentry/sentry-native/releases and drives its
+    // CMake build with `zig cc` / `zig c++`, so consumers get static
+    // archives that link against the same bundled libc++ they compile with.
+    .version = "0.1.0",
+    .minimum_zig_version = "0.15.2",
+    .fingerprint = 0x2a8f2ca42f7eecb2,
+
+    .dependencies = .{
+        // Source release, it ships the vendored crashpad, mini_chromium
+        // and libunwind trees that the git repo keeps as
+        // submodules, so there is nothing else to fetch.
+        .sentry_native = .{
+            .url = "https://github.com/getsentry/sentry-native/releases/download/0.13.8/sentry-native.zip",
+            .hash = "N-V-__8AALwCwgGjbY9DgrMenDB5aFOGq0YnGsRwLFjvK9QP",
+        },
+        // Crashpad's Linux HTTP transport links libcurl unconditionally, with
+        // no CMake option to opt out, so we grab one using zig.
+        .curl = .{
+            // Pinned to the last commit that still declares Zig 0.15 support
+            .url = "git+https://github.com/allyourcodebase/curl#fc863d6cbc4a694ff5bb11fc59470142c8682e2b",
+            .hash = "curl-8.18.0-mFDAWK_0AABsv8MPtSIjAPCVElXbt1vbzgBOs7plIlUJ",
+            // only fetched for Linux targets, and only when
+            .lazy = true,
+        },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "tools",
+        "README.md",
+        "LICENSE",
+    },
+}
