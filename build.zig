@@ -26,7 +26,7 @@
 //! of the usual static-C++ grief:
 //!
 //!   * The archives are built against the same bundled libc++ the consumer
-//!     links with, so a plain `linkLibCpp()` is the whole C++ story — no
+//!     links with, so `link_libcpp = true` is the whole C++ story — no
 //!     hunting for `libstdc++.so.6` via `gcc -print-file-name`, and no
 //!     `linkSystemLibrary("stdc++")` silently aliasing to libc++ (wrong ABI).
 //!   * `-target` is forwarded, so cross-compiling produces sentry archives for
@@ -41,7 +41,7 @@
 //! sentry-native and curl are declared as this package's own zon dependencies,
 //! so consumers don't declare them themselves.
 //!
-//! Targets **Zig 0.15.2**.
+//! Targets **Zig 0.16.0**.
 
 const std = @import("std");
 
@@ -181,7 +181,7 @@ pub fn crashpadHandlerName(os_tag: std.Target.Os.Tag) []const u8 {
 
 /// Memoized on a key covering the consumer builder and every setting that
 /// changes the output, so repeat calls reuse the same CMake run.
-var artifacts_cache: std.StringHashMapUnmanaged(Artifacts) = .{};
+var artifacts_cache: std.StringHashMapUnmanaged(Artifacts) = .empty;
 
 /// Build sentry-native for `opts.target` via its bundled CMake, compiled with
 /// `zig cc` / `zig c++`.
@@ -442,8 +442,8 @@ fn linkArtifacts(compile: *std.Build.Step.Compile, artifacts: Artifacts) void {
     // sentry-native and crashpad are C++. Because CMake compiled them with
     // `zig c++`, the bundled libc++ this pulls in is the exact one those
     // archives were built against.
-    compile.linkLibC();
-    compile.linkLibCpp();
+    mod.link_libc = true;
+    mod.link_libcpp = true;
 
     switch (artifacts.target.result.os.tag) {
         .linux => {

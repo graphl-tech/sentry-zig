@@ -21,12 +21,10 @@ pub const std_options: std.Options = .{
     .enable_segfault_handler = false,
 };
 
-pub fn main() !void {
-    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena_state.deinit();
-    const arena = arena_state.allocator();
+pub fn main(init: std.process.Init) !void {
+    const arena = init.arena.allocator();
 
-    const args = try std.process.argsAlloc(arena);
+    const args = try init.minimal.args.toSlice(arena);
     if (args.len != 2) {
         std.debug.print("usage: {s} <database-dir>\n", .{args[0]});
         return error.MissingDatabaseDir;
@@ -35,7 +33,7 @@ pub fn main() !void {
 
     // crashpad_handler is installed next to the executable, which is where
     // `addInstallCrashpadHandler` puts it and where a shipped app would keep it.
-    const exe_dir = try std.fs.selfExeDirPathAlloc(arena);
+    const exe_dir = try std.process.executableDirPathAlloc(init.io, arena);
     const handler_path = try std.fs.path.joinZ(arena, &.{
         exe_dir,
         switch (builtin.os.tag) {

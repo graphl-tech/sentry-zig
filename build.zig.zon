@@ -6,7 +6,7 @@
     // CMake build with `zig cc` / `zig c++`, so consumers get static
     // archives that link against the same bundled libc++ they compile with.
     .version = "0.1.0",
-    .minimum_zig_version = "0.15.2",
+    .minimum_zig_version = "0.16.0",
     .fingerprint = 0x2a8f2ca42f7eecb2,
 
     .dependencies = .{
@@ -20,10 +20,9 @@
         // Crashpad's Linux HTTP transport links libcurl unconditionally, with
         // no CMake option to opt out, so we grab one using zig.
         .curl = .{
-            // Pinned to the last commit that still declares Zig 0.15 support
-            .url = "git+https://github.com/allyourcodebase/curl#fc863d6cbc4a694ff5bb11fc59470142c8682e2b",
-            .hash = "curl-8.18.0-mFDAWK_0AABsv8MPtSIjAPCVElXbt1vbzgBOs7plIlUJ",
-            // only fetched for Linux targets, and only when
+            // only fetched for Linux targets
+            .url = "git+https://github.com/allyourcodebase/curl#c59c65cd767951abfe9ac0b1e075e64733953361",
+            .hash = "curl-8.18.0-mFDAWPf7AACO9V1eofR62eABcrB1QQtT1a-DN5XumC53",
             .lazy = true,
         },
     },

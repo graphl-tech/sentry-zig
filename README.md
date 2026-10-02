@@ -6,7 +6,7 @@ helpers to use from the zig build system.
 
 Requires CMake be in PATH. We plan to supplant the CMake usage with the zig build system eventually.
 
-Targets **Zig 0.15.2**.
+Targets **Zig 0.16.0**.
 
 ## Usage
 
