@@ -41,7 +41,7 @@
 //! sentry-native and curl are declared as this package's own zon dependencies,
 //! so consumers don't declare them themselves.
 //!
-//! Targets **Zig 0.16.0**.
+//! Targets **Zig 0.17.0**.
 
 const std = @import("std");
 
@@ -96,12 +96,12 @@ pub const BuildType = enum {
 
 pub const BuildOptions = struct {
     target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
+    optimize: std.builtin.Optimize,
     backend: Backend = .crashpad,
     transport: Transport = .none,
     /// Overrides the `optimize`-derived default. sentry-native is
     /// crash-reporting infrastructure: you want its debug info for
-    /// symbolication and you never want to step into it, so `.Debug`
+    /// symbolication and you never want to step into it, so `.debug`
     /// deliberately maps to `RelWithDebInfo` rather than `Debug`.
     build_type: ?BuildType = null,
     /// Where crashpad's libcurl comes from. Ignored for non-Linux targets,
@@ -133,10 +133,10 @@ pub const Curl = union(enum) {
     },
 };
 
-fn defaultBuildType(optimize: std.builtin.OptimizeMode) BuildType {
+fn defaultBuildType(optimize: std.builtin.Optimize) BuildType {
     return switch (optimize) {
-        .Debug, .ReleaseSafe, .ReleaseFast => .rel_with_deb_info,
-        .ReleaseSmall => .min_size_rel,
+        .debug, .safe, .fast => .rel_with_deb_info,
+        .small => .min_size_rel,
     };
 }
 
@@ -311,7 +311,7 @@ fn resolveCurl(own: *std.Build, opts: BuildOptions) ?ResolvedCurl {
         .target = opts.target,
         // Never called into — this only has to satisfy crashpad's link, so
         // build the smallest thing that does.
-        .optimize = .ReleaseSmall,
+        .optimize = .small,
         // Position-independent to match CMAKE_POSITION_INDEPENDENT_CODE, so
         // the archive works in a PIE executable or a shared library.
         .pie = true,
@@ -429,14 +429,31 @@ pub fn linkSentry(b: *std.Build, compile: *std.Build.Step.Compile) void {
         @panic("sentry-zig: linkSentry needs a compile whose root module has a resolved target");
     const artifacts = buildSentryNativeArtifacts(b, .{
         .target = target,
-        .optimize = compile.root_module.optimize orelse .Debug,
+        .optimize = compile.root_module.optimize orelse .debug,
     });
     artifacts.link(compile);
+}
+
+/// `sentry.h` as a Zig module, through translate-c: Zig 0.17 removed `@cImport`.
+/// `Artifacts.link` adds it to the compile's root module as `sentry_c`; add it to any other
+/// module that calls the C API (`mod.addImport("sentry_c", sentryCModule(b, artifacts, optimize))`).
+pub fn sentryCModule(
+    b: *std.Build,
+    artifacts: Artifacts,
+    optimize: std.builtin.Optimize,
+) *std.Build.Module {
+    const tc = b.addTranslateC(.{
+        .root_source_file = artifacts.include_dir.path(b, "sentry.h"),
+        .target = artifacts.target,
+        .optimize = optimize,
+    });
+    return tc.createModule();
 }
 
 fn linkArtifacts(compile: *std.Build.Step.Compile, artifacts: Artifacts) void {
     const mod = compile.root_module;
     mod.addIncludePath(artifacts.include_dir);
+    mod.addImport("sentry_c", sentryCModule(compile.step.owner, artifacts, mod.optimize orelse .debug));
     for (artifacts.libs) |lib| mod.addObjectFile(lib);
 
     // sentry-native and crashpad are C++. Because CMake compiled them with

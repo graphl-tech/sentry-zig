@@ -8,9 +8,7 @@
 
 const std = @import("std");
 const builtin = @import("builtin");
-const c = @cImport({
-    @cInclude("sentry.h");
-});
+const c = @import("sentry_c");
 
 /// Zig installs a SIGSEGV handler of its own before main, and crashpad chains
 /// to it after writing the dump — at which point it tries to symbolize a stack
@@ -29,7 +27,7 @@ pub fn main(init: std.process.Init) !void {
         std.debug.print("usage: {s} <database-dir>\n", .{args[0]});
         return error.MissingDatabaseDir;
     }
-    const database_path = try arena.dupeZ(u8, args[1]);
+    const database_path = try arena.dupeSentinel(u8, args[1], 0);
 
     // crashpad_handler is installed next to the executable, which is where
     // `addInstallCrashpadHandler` puts it and where a shipped app would keep it.

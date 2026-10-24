@@ -6,7 +6,7 @@ helpers to use from the zig build system.
 
 Requires CMake be in PATH. We plan to supplant the CMake usage with the zig build system eventually.
 
-Targets **Zig 0.16.0**.
+Targets **Zig 0.17.0**.
 
 ## Usage
 
@@ -42,9 +42,13 @@ pub fn build(b: *std.Build) void {
 }
 ```
 
-At runtime, point sentry at the handler you installed:
+At runtime, point sentry at the handler you installed. `linkSentry` exposes
+`sentry.h` to the root module as `sentry_c` (use `sentryCModule` for other
+modules):
 
 ```zig
+const c = @import("sentry_c");
+
 const options = c.sentry_options_new();
 c.sentry_options_set_handler_path(options, ".../crashpad_handler");
 c.sentry_options_set_database_path(options, ".../sentry-db");
